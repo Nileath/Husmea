@@ -1,0 +1,8 @@
+# Lista de IOCs de ejemplo para husmea (--ioc examples/iocs.txt)
+# Formato: un hash MD5, SHA1 o SHA256 por línea, opcionalmente seguido de un nombre.
+# Separadores admitidos: coma, punto y coma, tabulador o espacio. Las líneas con # son comentarios.
+#
+# Fichero de prueba EICAR (inofensivo, usado para probar antivirus):
+44d88612fea8a8f36de82e1278abb02f,EICAR-Test-File
+3395856ce81f2b7382dee72602f798b642f14140,EICAR-Test-File
+275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f,EICAR-Test-File

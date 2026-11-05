@@ -1,0 +1,4 @@
+dist/
+husmea-reports/
+*.exe
+x-nose-reports/

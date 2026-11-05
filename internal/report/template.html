@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>husmea · {{.Meta.Host}} · {{.Meta.Started.Format "2006-01-02 15:04"}}</title>
+<style>
+  :root { --bg:#0f1117; --panel:#171a23; --text:#e6e6e6; --muted:#8b93a7; --border:#262b38;
+          --critical:#ff3b5c; --high:#ff8a3d; --medium:#f5c542; --low:#4fb3ff; --info:#7d8597; --ok:#38c172; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:24px 32px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  h1 { margin:0; font-size:22px; } h1 span { color:var(--muted); font-weight:400; font-size:14px; }
+  .meta { color:var(--muted); font-size:13px; } .meta b { color:var(--text); font-weight:500; }
+  main { padding:24px 32px; max-width:1300px; margin:auto; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; cursor:pointer; user-select:none; }
+  .card.off { opacity:.35; }
+  .card .n { font-size:28px; font-weight:700; } .card .l { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .card.critical .n { color:var(--critical); } .card.high .n { color:var(--high); } .card.medium .n { color:var(--medium); }
+  .card.low .n { color:var(--low); } .card.info .n { color:var(--info); }
+  .risk { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .risk .n { font-size:22px; font-weight:700; }
+  .toolbar { display:flex; gap:12px; margin:0 0 16px; flex-wrap:wrap; align-items:center; }
+  input[type=search] { flex:1; min-width:240px; background:var(--panel); border:1px solid var(--border); color:var(--text); padding:9px 12px; border-radius:8px; font-size:14px; }
+  select { background:var(--panel); color:var(--text); border:1px solid var(--border); padding:8px; border-radius:8px; }
+  details.f { background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--info); border-radius:8px; margin-bottom:8px; }
+  details.f.critical { border-left-color:var(--critical); } details.f.high { border-left-color:var(--high); }
+  details.f.medium { border-left-color:var(--medium); } details.f.low { border-left-color:var(--low); }
+  summary { padding:10px 14px; cursor:pointer; display:flex; gap:10px; align-items:center; list-style:none; }
+  summary::-webkit-details-marker { display:none; }
+  .badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; min-width:72px; text-align:center; color:#111; }
+  .badge.critical { background:var(--critical); color:#fff; } .badge.high { background:var(--high); } .badge.medium { background:var(--medium); }
+  .badge.low { background:var(--low); } .badge.info { background:var(--info); color:#fff; }
+  .chk { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
+  .body { padding:4px 18px 16px; border-top:1px solid var(--border); }
+  .body p { margin:8px 0; }
+  .path { font-family:ui-monospace,Consolas,monospace; font-size:12.5px; word-break:break-all; color:#cfd6e6; }
+  ul.reasons { margin:8px 0; padding-left:20px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  td, th { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; }
+  td.k { color:var(--muted); width:150px; white-space:nowrap; }
+  pre { margin:0; white-space:pre-wrap; word-break:break-all; font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
+  .rec { background:rgba(56,193,114,.08); border:1px solid rgba(56,193,114,.3); border-radius:6px; padding:8px 12px; margin-top:10px; }
+  .mitre a { display:inline-block; font-size:11px; color:var(--low); border:1px solid var(--border); border-radius:4px; padding:1px 6px; margin:4px 4px 0 0; text-decoration:none; }
+  h2 { font-size:16px; margin:32px 0 12px; }
+  .st-ok { color:var(--ok); } .st-error, .st-timeout { color:var(--critical); } .st-skipped { color:var(--muted); }
+  .empty { color:var(--muted); padding:24px; text-align:center; }
+  footer { color:var(--muted); font-size:12px; text-align:center; padding:24px; }
+  a { color:var(--low); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>husmea <span>informe de análisis de amenazas</span></h1>
+    <div class="meta">Generado {{.Meta.Started.Format "2006-01-02 15:04:05"}} · duración {{.Meta.Duration}} · versión {{.Meta.Version}}</div>
+  </div>
+  <div class="meta">
+    Equipo <b>{{.Meta.Host}}</b> · Usuario <b>{{.Meta.User}}</b> · SO <b>{{.Meta.OS}}</b><br>
+    Privilegios <b>{{if .Meta.IsAdmin}}{{adminWord}}{{else}}usuario estándar (análisis parcial){{end}}</b> ·
+    Consultas online <b>{{if .Meta.Online}}sí (VirusTotal){{else}}no{{end}}</b>
+  </div>
+</header>
+<main>
+  <div class="cards">
+    <div class="risk"><div class="l" style="color:var(--muted);font-size:12px;text-transform:uppercase">Riesgo</div><div class="n">{{.Summary.RiskLevel}}</div><div class="meta">puntuación {{.Summary.RiskScore}}/100</div></div>
+    <div class="card critical" data-sev="critical"><div class="n">{{count .Summary "critical"}}</div><div class="l">Crítico</div></div>
+    <div class="card high" data-sev="high"><div class="n">{{count .Summary "high"}}</div><div class="l">Alto</div></div>
+    <div class="card medium" data-sev="medium"><div class="n">{{count .Summary "medium"}}</div><div class="l">Medio</div></div>
+    <div class="card low" data-sev="low"><div class="n">{{count .Summary "low"}}</div><div class="l">Bajo</div></div>
+    <div class="card info off" data-sev="info"><div class="n">{{count .Summary "info"}}</div><div class="l">Info</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Filtrar por texto (ruta, nombre, regla, técnica…)">
+    <select id="check"><option value="">Todos los módulos</option>{{range .Checks}}<option value="{{.Name}}">{{.Name}}</option>{{end}}</select>
+    <span class="meta" id="shown"></span>
+  </div>
+
+  <div id="findings">
+  {{range .Findings}}
+    <details class="f {{sevClass .Severity}}" data-sev="{{sevClass .Severity}}" data-check="{{.Check}}">
+      <summary><span class="badge {{sevClass .Severity}}">{{sevLabel .Severity}}</span><span>{{.Title}}</span><span class="chk">{{.Check}}</span></summary>
+      <div class="body">
+        {{if .Path}}<p class="path">{{.Path}}</p>{{end}}
+        {{if .Description}}<p>{{.Description}}</p>{{end}}
+        {{if .Reasons}}<ul class="reasons">{{range .Reasons}}<li>{{.}}</li>{{end}}</ul>{{end}}
+        <table>
+          {{if .Signer}}<tr><td class="k">firmante</td><td>{{.Signer}}</td></tr>{{end}}
+          {{if .SHA256}}<tr><td class="k">sha256</td><td><pre>{{.SHA256}}</pre></td></tr>{{end}}
+          {{range evidence .Evidence}}<tr><td class="k">{{.K}}</td><td>{{if isVTLink .V}}<a href="{{.V}}" target="_blank" rel="noopener noreferrer">{{.V}}</a>{{else}}<pre>{{.V}}</pre>{{end}}</td></tr>{{end}}
+        </table>
+        {{if .Recommendation}}<div class="rec"><b>Recomendación:</b> {{.Recommendation}}</div>{{end}}
+        {{if .MITRE}}<div class="mitre">{{range .MITRE}}<a href="{{mitreURL .}}" target="_blank" rel="noopener noreferrer">{{.}}</a>{{end}}</div>{{end}}
+      </div>
+    </details>
+  {{end}}
+  </div>
+  <div class="empty" id="empty" hidden>No hay hallazgos con los filtros actuales.</div>
+
+  <h2>Módulos ejecutados</h2>
+  <table>
+    <tr><th>Módulo</th><th>Estado</th><th>Hallazgos</th><th>Detalle</th></tr>
+    {{range .Checks}}<tr><td>{{.Name}}</td><td class="st-{{.Status}}">{{.Status}}</td><td>{{.Findings}}</td><td class="meta">{{.Message}}</td></tr>{{end}}
+  </table>
+  {{if .Suppressed}}<p class="meta">{{.Suppressed}} hallazgos suprimidos por la allowlist.</p>{{end}}
+</main>
+<footer>husmea solo detecta y no modifica el sistema. Los hallazgos son indicios que deben verificarse antes de actuar.</footer>
+<script>
+(function () {
+  var active = { critical: true, high: true, medium: true, low: true, info: false };
+  var cards = document.querySelectorAll('.card[data-sev]');
+  var items = document.querySelectorAll('details.f');
+  var q = document.getElementById('q'), chk = document.getElementById('check');
+  function apply() {
+    var text = q.value.toLowerCase(), c = chk.value, n = 0;
+    items.forEach(function (el) {
+      var ok = active[el.dataset.sev] && (!c || el.dataset.check === c) && (!text || el.textContent.toLowerCase().indexOf(text) >= 0);
+      el.hidden = !ok; if (ok) n++;
+    });
+    document.getElementById('shown').textContent = n + ' de ' + items.length + ' hallazgos';
+    document.getElementById('empty').hidden = n > 0;
+  }
+  cards.forEach(function (card) {
+    card.addEventListener('click', function () {
+      var s = card.dataset.sev; active[s] = !active[s]; card.classList.toggle('off', !active[s]); apply();
+    });
+  });
+  q.addEventListener('input', apply); chk.addEventListener('change', apply);
+  apply();
+})();
+</script>
+</body>
+</html>
